@@ -21,8 +21,21 @@ bool game_over_switch;
 bool menu_switch;
 int score;
 
+sf::SoundBuffer music_buffer;
+sf::SoundBuffer game_over_sound_buffer;
+sf::Sound music;
+sf::Sound game_over_sound;
+
 std::random_device dev;
 std::mt19937 rng(dev());
+
+bool test_triangle_collision(sf::FloatRect aabb, sf::Vector2f t1, sf::Vector2f t2, sf::Vector2f t3) {
+    if(aabb.contains(t1)) return true;
+    else if(aabb.contains(t2)) return true;
+    else if(aabb.contains(t3)) return true;
+
+    return false;
+}
 
 std::string toString(int i) {
     std::ostringstream ss;
@@ -173,6 +186,10 @@ sf::FloatRect Bullet::getAABB() {
     return getTransform().transformRect(vertex_array.getBounds());
 }
 
+sf::Vector2f Bullet::getVertex(int id) {
+    return getTransform().transformPoint(vertex_array[id].position);
+}
+
 void BulletManager::addBullet(Bullet b) {
     bullets.push_back(b);
 }
@@ -187,15 +204,15 @@ void BulletManager::update(float delta_time) {
         }
     }
 
-    //std::cout << bullets.size() << std::endl;
     for(size_t i = 0; i < bullets.size(); i++) {
         bullets[i].update(delta_time);
     }
 
     for(size_t i = 0; i < bullets.size(); i++) {
         if(bullets[i].isEnemy()) {
-            if(bullets[i].getAABB().intersects(player.getAABB())) {
+            if(test_triangle_collision(player.getAABB(), bullets[i].getVertex(0), bullets[i].getVertex(1), bullets[i].getVertex(3))) {
                 game_over_switch = true;
+                game_over_sound.play();
             }
         }
     }
@@ -284,6 +301,9 @@ int main() {
     game_over_bottom.setOrigin(game_over.getGlobalBounds().width/2, game_over.getGlobalBounds().height/2);
     game_over_bottom.setPosition(400, 380);
 
+    sf::Text disable_music_text("PRESS M TO DISABLE MUSIC", font, 18);
+    disable_music_text.setPosition(450, 100);
+
     game_over_switch = false;
     menu_switch = true;
     score = 0;
@@ -305,6 +325,15 @@ int main() {
 
     Button extreme_button(&font, "EXTREME", sf::Color::White, 300, 50);
     extreme_button.setPosition(100, 540);
+
+    music_buffer.loadFromFile("data/music.ogg");
+    game_over_sound_buffer.loadFromFile("data/game_over.ogg");
+
+    music.setBuffer(music_buffer);
+    game_over_sound.setBuffer(game_over_sound_buffer);
+    music.setLoop(true);
+    music.setVolume(25);
+    music.play();
 
     sf::Event e;
     sf::Clock game_timer;
@@ -364,6 +393,7 @@ int main() {
             window.draw(hard_button);
             window.draw(very_hard_button);
             window.draw(extreme_button);
+            window.draw(disable_music_text);
 
             if(very_easy_button.isPressed()) {
                 menu_switch = false;
@@ -407,6 +437,7 @@ int main() {
                 DifficultyUpTime = 0.3f;
                 difficulty_text.setString("Difficulty: Extreme");
             }
+            if(sf::Keyboard::isKeyPressed(sf::Keyboard::M)) music.stop();
         }
         window.draw(score_text);
         window.display();

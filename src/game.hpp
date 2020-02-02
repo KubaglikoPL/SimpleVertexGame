@@ -45,6 +45,7 @@ public:
     bool isEnemy();
     void update(float delta_time);
     sf::FloatRect getAABB();
+    sf::Vector2f getVertex(int id);
 private:
     virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const {
         states.transform *= getTransform();
