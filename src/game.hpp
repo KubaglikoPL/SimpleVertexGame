@@ -17,8 +17,6 @@ const static float PlayerBulletCooldown = 0.1f;
 
 const static float EnemyBulletStartCooldown = 2.0f;
 
-const static float DifficultyUpTime = 0.7f;
-
 float random(float v_min, float v_max);
 sf::Vector2f getMoveVector(float angle);
 float angleBeetweenPoints(sf::Vector2f v, sf::Vector2f v2);
@@ -55,7 +53,7 @@ private:
     }
 };
 
-class BulletManager : public sf::Drawable{
+class BulletManager : public sf::Drawable {
     std::vector<Bullet> bullets;
 public:
     void addBullet(Bullet b);
@@ -66,5 +64,21 @@ private:
         for(size_t i = 0; i < bullets.size(); i++) {
             target.draw(bullets[i]);
         }
+    }
+};
+
+class Button : public sf::Drawable, public sf::Transformable {
+    sf::VertexArray vertex_array;
+    sf::Text text;
+public:
+    Button(sf::Font *font, std::string text_string, sf::Color color, int width, int height);
+    bool isPressed();
+private:
+    virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const {
+        states.transform *= getTransform();
+
+        target.draw(vertex_array, states);
+
+        target.draw(text, states);
     }
 };

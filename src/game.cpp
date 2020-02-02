@@ -9,6 +9,7 @@
 
 float EnemyBulletCooldownDecressModifirer = 1.01f;
 float EnemyBulletSpeed = 135.0f;
+float DifficultyUpTime = 0.7f;
 
 sf::RenderWindow window;
 BulletManager bulletManager;
@@ -17,6 +18,7 @@ float enemy_bullet_cooldown;
 float enemy_bullet_decress;
 float enemy_bullet_timer;
 bool game_over_switch;
+bool menu_switch;
 int score;
 
 std::random_device dev;
@@ -219,6 +221,45 @@ void BulletManager::clearBullets() {
     bullets.clear();
 }
 
+Button::Button(sf::Font *font, std::string text_string, sf::Color color, int width, int height) {
+    text.setFont(*font);
+    text.setString(text_string);
+    text.setFillColor(color);
+    text.setCharacterSize(height);
+    text.setStyle(sf::Text::Regular);
+    text.setOrigin((-width/2) + text.getGlobalBounds().width/2, 7);
+
+    vertex_array.clear();
+    vertex_array.setPrimitiveType(sf::Lines);
+    vertex_array.resize(8);
+    vertex_array[0].position = sf::Vector2f(0, 0);
+    vertex_array[1].position = sf::Vector2f(width, 0);
+
+    vertex_array[2].position = sf::Vector2f(width, 0);
+    vertex_array[3].position = sf::Vector2f(width, height);
+
+    vertex_array[4].position = sf::Vector2f(width, height);
+    vertex_array[5].position = sf::Vector2f(0, height);
+
+    vertex_array[6].position = sf::Vector2f(0, height);
+    vertex_array[7].position = sf::Vector2f(0, 0);
+
+    for(size_t i = 0; i < vertex_array.getVertexCount(); i++) {
+        vertex_array[i].color = color;
+    }
+}
+
+bool Button::isPressed() {
+    sf::FloatRect button_aabb = getTransform().transformRect(vertex_array.getBounds());
+    sf::Vector2f mouse = v2i_to_v2f(sf::Mouse::getPosition(window));
+
+    if(sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
+        if(button_aabb.contains(mouse)) return true;
+    }
+
+    return false;
+}
+
 int main() {
     srand(time(0));
 
@@ -234,6 +275,8 @@ int main() {
     sf::Font font;
     font.loadFromFile("data/Tuffy_Bold.ttf");
     sf::Text score_text("", font);
+    sf::Text difficulty_text("", font);
+    difficulty_text.setPosition(0, 35);
     sf::Text game_over("GAME OVER", font, 72);
     game_over.setOrigin(game_over.getGlobalBounds().width/2, game_over.getGlobalBounds().height/2);
     game_over.setPosition(400, 300);
@@ -242,7 +285,26 @@ int main() {
     game_over_bottom.setPosition(400, 380);
 
     game_over_switch = false;
+    menu_switch = true;
     score = 0;
+
+    Button very_easy_button(&font, "VERY EASY", sf::Color::Cyan, 300, 50);
+    very_easy_button.setPosition(100, 40);
+
+    Button easy_button(&font, "EASY", sf::Color::Green, 300, 50);
+    easy_button.setPosition(100, 140);
+
+    Button normal_button(&font, "NORMAL", sf::Color::Yellow, 300, 50);
+    normal_button.setPosition(100, 240);
+
+    Button hard_button(&font, "HARD", sf::Color::Magenta, 300, 50);
+    hard_button.setPosition(100, 340);
+
+    Button very_hard_button(&font, "VERY HARD", sf::Color::Red, 300, 50);
+    very_hard_button.setPosition(100, 440);
+
+    Button extreme_button(&font, "EXTREME", sf::Color::White, 300, 50);
+    extreme_button.setPosition(100, 540);
 
     sf::Event e;
     sf::Clock game_timer;
@@ -253,14 +315,14 @@ int main() {
             if(e.type == sf::Event::Closed) window.close();
         }
         delta_time = game_timer.restart().asSeconds();
-        if(!game_over_switch) {
+        if((!game_over_switch) && (!menu_switch)) {
             player.update(delta_time);
             bulletManager.update(delta_time);
         }
         score_text.setString("Score: " + toString(score));
 
         enemy_bullet_timer += delta_time;
-        if(!game_over_switch) {
+        if((!game_over_switch) && (!menu_switch)) {
             if(enemy_bullet_timer >= enemy_bullet_cooldown) {
                 spawnEnemyBullet();
                 enemy_bullet_timer = 0;
@@ -268,16 +330,21 @@ int main() {
             }
         }
 
-        dificulty_up_timer += delta_time;
-        if(dificulty_up_timer > DifficultyUpTime) {
-            enemy_bullet_decress = enemy_bullet_decress * EnemyBulletCooldownDecressModifirer;
-            enemy_bullet_cooldown = EnemyBulletStartCooldown - enemy_bullet_decress;
-            dificulty_up_timer = 0;
+        if((!game_over_switch) && (!menu_switch)) {
+            dificulty_up_timer += delta_time;
+            if(dificulty_up_timer > DifficultyUpTime) {
+                enemy_bullet_decress = enemy_bullet_decress * EnemyBulletCooldownDecressModifirer;
+                enemy_bullet_cooldown = EnemyBulletStartCooldown - enemy_bullet_decress;
+                dificulty_up_timer = 0;
+            }
         }
 
         window.clear();
-        window.draw(player);
-        window.draw(bulletManager);
+        if(!menu_switch) {
+            window.draw(player);
+            window.draw(bulletManager);
+            window.draw(difficulty_text);
+        }
         if(game_over_switch) {
             window.draw(game_over);
             window.draw(game_over_bottom);
@@ -288,6 +355,57 @@ int main() {
                 enemy_bullet_cooldown = EnemyBulletStartCooldown;
                 enemy_bullet_decress = EnemyBulletCooldownDecressModifirer;
                 game_over_switch = false;
+            }
+        }
+        if(menu_switch) {
+            window.draw(very_easy_button);
+            window.draw(easy_button);
+            window.draw(normal_button);
+            window.draw(hard_button);
+            window.draw(very_hard_button);
+            window.draw(extreme_button);
+
+            if(very_easy_button.isPressed()) {
+                menu_switch = false;
+                EnemyBulletCooldownDecressModifirer = 1.002f;
+                EnemyBulletSpeed = 80.0f;
+                DifficultyUpTime = 1.0f;
+                difficulty_text.setString("Difficulty: Very Easy");
+            }
+            if(easy_button.isPressed()) {
+                menu_switch = false;
+                EnemyBulletCooldownDecressModifirer = 1.005f;
+                EnemyBulletSpeed = 110.0f;
+                DifficultyUpTime = 1.0f;
+                difficulty_text.setString("Difficulty: Easy");
+            }
+            if(normal_button.isPressed()) {
+                menu_switch = false;
+                EnemyBulletCooldownDecressModifirer = 1.007f;
+                EnemyBulletSpeed = 135.0f;
+                DifficultyUpTime = 0.7f;
+                difficulty_text.setString("Difficulty: Normal");
+            }
+            if(hard_button.isPressed()) {
+                menu_switch = false;
+                EnemyBulletCooldownDecressModifirer = 1.01f;
+                EnemyBulletSpeed = 150.0f;
+                DifficultyUpTime = 0.7f;
+                difficulty_text.setString("Difficulty: Hard");
+            }
+            if(very_hard_button.isPressed()) {
+                menu_switch = false;
+                EnemyBulletCooldownDecressModifirer = 1.015f;
+                EnemyBulletSpeed = 160.0f;
+                DifficultyUpTime = 0.5f;
+                difficulty_text.setString("Difficulty: Very Hard");
+            }
+            if(extreme_button.isPressed()) {
+                menu_switch = false;
+                EnemyBulletCooldownDecressModifirer = 1.02f;
+                EnemyBulletSpeed = 200.0f;
+                DifficultyUpTime = 0.3f;
+                difficulty_text.setString("Difficulty: Extreme");
             }
         }
         window.draw(score_text);
