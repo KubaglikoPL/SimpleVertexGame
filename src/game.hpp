@@ -17,6 +17,8 @@ const static float PlayerBulletCooldown = 0.1f;
 
 const static float EnemyBulletStartCooldown = 2.0f;
 
+const static float DifficultyUpTime = 0.7f;
+
 float random(float v_min, float v_max);
 sf::Vector2f getMoveVector(float angle);
 float angleBeetweenPoints(sf::Vector2f v, sf::Vector2f v2);

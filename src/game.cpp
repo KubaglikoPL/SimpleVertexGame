@@ -8,7 +8,7 @@
 #define PI 3.14159265
 
 float EnemyBulletCooldownDecressModifirer = 1.01f;
-float EnemyBulletSpeed = 200.0f;
+float EnemyBulletSpeed = 135.0f;
 
 sf::RenderWindow window;
 BulletManager bulletManager;
@@ -62,7 +62,10 @@ void spawnEnemyBullet() {
     float y_pos = 800 * cos(angleToRadians(angle)) + 300;
 
     b.setPosition(x_pos, y_pos);
-    b.setRotation(-angle);
+
+    float r = random(-15, 15);
+
+    b.setRotation((-angle) + r);
 
     bulletManager.addBullet(b);
 }
@@ -201,6 +204,8 @@ void BulletManager::update(float delta_time) {
                 if((bullets[i].isEnemy()) && (!bullets[i2].isEnemy())) {
                     if(bullets[i].getAABB().intersects(bullets[i2].getAABB())) {
                         bullets.erase(bullets.begin() + i);
+                        bullets.erase(bullets.begin() + i2);
+                        score++;
                         break;
                         break;
                     }
@@ -242,6 +247,7 @@ int main() {
     sf::Event e;
     sf::Clock game_timer;
     float delta_time;
+    float dificulty_up_timer = 0;
     while(window.isOpen()) {
         while(window.pollEvent(e)) {
             if(e.type == sf::Event::Closed) window.close();
@@ -257,11 +263,16 @@ int main() {
         if(!game_over_switch) {
             if(enemy_bullet_timer >= enemy_bullet_cooldown) {
                 spawnEnemyBullet();
-                enemy_bullet_decress = enemy_bullet_decress * EnemyBulletCooldownDecressModifirer;
-                enemy_bullet_cooldown = EnemyBulletStartCooldown - enemy_bullet_decress;
                 enemy_bullet_timer = 0;
                 score++;
             }
+        }
+
+        dificulty_up_timer += delta_time;
+        if(dificulty_up_timer > DifficultyUpTime) {
+            enemy_bullet_decress = enemy_bullet_decress * EnemyBulletCooldownDecressModifirer;
+            enemy_bullet_cooldown = EnemyBulletStartCooldown - enemy_bullet_decress;
+            dificulty_up_timer = 0;
         }
 
         window.clear();
