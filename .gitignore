@@ -34,3 +34,6 @@
 *.cbp
 *.depend
 *.layout
+*.res
+*.pdn
+*.png
